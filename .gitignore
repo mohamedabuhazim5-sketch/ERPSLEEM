@@ -1,13 +1,5 @@
 node_modules
-.next
+dist
+.vercel
 .env
 .env.local
-out
-dist
-build
-coverage
-*.log
-.DS_Store
-.vercel
-.vscode
-.vercelignore.txt
