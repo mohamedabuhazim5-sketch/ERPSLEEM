@@ -1,0 +1,14 @@
+import { useQuery } from '@tanstack/react-query';
+import { useParams } from 'react-router-dom';
+import PageHeader from '../../components/ui/PageHeader';
+import { formatCurrency, formatDate } from '../../lib/format';
+import { queryKeys } from '../../lib/queryKeys';
+import { generateCustomerStatementPdf } from '../../lib/customer-statement-pdf';
+import { getCustomerStatement } from './customer-statement.service';
+
+export default function CustomerStatementPage() {
+  const { id } = useParams();
+  const { data, isLoading: loading, error } = useQuery({ queryKey: queryKeys.customerStatement(id), queryFn: () => getCustomerStatement(id), enabled: Boolean(id) });
+  if (loading) return <div dir="rtl" className="rounded-2xl border border-slate-200 bg-white p-6">جاري التحميل...</div>;
+  return <div className="space-y-6" dir="rtl"><PageHeader title={`كشف حساب العميل: ${data?.customer?.name || ''}`} subtitle={`الرصيد الحالي: ${formatCurrency(data?.customer?.balance || 0)}`} actions={<button onClick={() => generateCustomerStatementPdf(data)} className="rounded-xl border border-slate-300 px-4 py-3">PDF</button>} />{error ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">{error.message || 'تعذر تحميل كشف الحساب'}</div> : null}<div className="grid gap-4 lg:grid-cols-2"><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-xl font-bold">فواتير البيع</h2><div className="mt-4 space-y-3">{(data?.sales || []).map((row) => <div key={row.id} className="rounded-xl border border-slate-100 p-4"><div className="flex items-center justify-between"><strong>{row.invoice_number}</strong><span>{formatDate(row.sale_date)}</span></div><div className="mt-2 text-sm text-slate-600">الإجمالي: {formatCurrency(row.total_amount)}</div><div className="text-sm text-slate-600">المدفوع: {formatCurrency(row.paid_amount)}</div><div className="text-sm text-slate-600">المتبقي: {formatCurrency(row.due_amount)}</div></div>)}{(data?.sales || []).length === 0 ? <p className="text-slate-500">لا توجد فواتير لهذا العميل.</p> : null}</div></div><div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-xl font-bold">سندات القبض</h2><div className="mt-4 space-y-3">{(data?.receipts || []).map((row) => <div key={row.id} className="rounded-xl border border-slate-100 p-4"><div className="flex items-center justify-between"><strong>{row.receipt_number}</strong><span>{formatDate(row.receipt_date)}</span></div><div className="mt-2 text-sm text-slate-600">القيمة: {formatCurrency(row.amount)}</div><div className="text-sm text-slate-600">الطريقة: {row.payment_method}</div></div>)}{(data?.receipts || []).length === 0 ? <p className="text-slate-500">لا توجد سندات قبض لهذا العميل.</p> : null}</div></div></div></div>;
+}
